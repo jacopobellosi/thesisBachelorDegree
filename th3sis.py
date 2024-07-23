@@ -278,7 +278,7 @@ if uploaded_file is not None:
             f.write(uploaded_file.getbuffer())
             
         # Convert PDF to images
-        images = convert_from_path(temp_file_path,poppler_path='poppler-24.02.0/Library/bin')
+        images = convert_from_path(temp_file_path,poppler_path='./poppler-24.02.0/Library/bin')
         image_paths = []
         for i, image in enumerate(images):
             image_path = f'page_{i}.jpg'
