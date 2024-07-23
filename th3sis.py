@@ -73,75 +73,73 @@ if "messages" not in st.session_state.keys():
         }
     ]
 
-st.text('Preparing the model...')
+#st.text('Preparing the model...')
 
 
 def encode_image(image_path):
   with open(image_path, "rb") as image_file:
     return base64.b64encode(image_file.read()).decode('utf-8')
 
-def extract_text_from_images(image_paths):
-    for image_path in image_paths:
-        with open(image_path, "rb") as img_file:
-            img_data = base64.b64encode(img_file.read()).decode()
-            prompt = f"""
+def extract_text_from_images(concatenated_image):
+
+    prompt = f"""
             Extract the text into appropriate JSON. Put multiple related items in an array.
             The response must be only in JSON. Must only contain the JSON response, not a word in eccess!
             
             """
 
-            headers = {
+    headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {openai.api_key}"
             }
-            print("elaboro il CV")
+    print("elaboro il CV")
 
-            payload = {
-            "model": "gpt-4o",
-            "temperature":0,
-            "messages": [
-                {
-                "role": "user",
-                "content": [
-                    {
-                    "type": "text",
-                    "text": prompt
-                    },
-                    {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{img_data}"
-                    }
-                    }
-                ]
+    payload = {
+        "model": "gpt-4o",
+        "temperature":0,
+        "messages": [
+        {
+        "role": "user",
+        "content": [
+            {
+            "type": "text",
+            "text": prompt
+            },
+            {
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:image/jpeg;base64,{concatenated_image}"
                 }
-            ],
-            "max_tokens": 1000
             }
-            response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-            response = response.json()
+            ]
+        }
+        ],
+        "max_tokens": 1000
+    }
+    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+    response = response.json()
             
-            response = response['choices'][0]['message']['content']
-            #st.write(response)
-            #print(response)
+    response = response['choices'][0]['message']['content']
+    #st.write(response)
+    #print(response)
             
-            response = {"role": "assistant", "content": response}
-            st.text('Loading your data...')
-            context1,context2,context3 = load_data(response["content"])
-            st.session_state.context1=context1
-            st.session_state.context2=context2
-            st.session_state.context3=context3
-            st.text('Preparing the engine...')
-            if len(st.session_state.messages)<2:
-                get_first_advice(response["content"])
+    response = {"role": "assistant", "content": response}
+    st.text('Loading your data...')
+    context1,context2,context3 = load_data(response["content"])
+    st.session_state.context1=context1
+    st.session_state.context2=context2
+    st.session_state.context3=context3
+    #st.text('Preparing the engine...')
+    if len(st.session_state.messages)<2:
+        get_first_advice(response["content"])
             
-            conversation_history.append(response)
-            #print(conversation_history)
-            #st.session_state.messages.append(message)
-            #response_stream = st.session_state.chat_engine.stream_chat(prompt)
-            #st.write_stream(response_stream.response_gen)
-            #message = {"role": "assistant", "content": response_stream.response}
-            #st.session_state.messages.append(message)
+    conversation_history.append(response)
+    #print(conversation_history)
+    #st.session_state.messages.append(message)
+    #response_stream = st.session_state.chat_engine.stream_chat(prompt)
+    #st.write_stream(response_stream.response_gen)
+    #message = {"role": "assistant", "content": response_stream.response}
+    #st.session_state.messages.append(message)
             
     return response["content"]
 
@@ -284,15 +282,27 @@ if uploaded_file is not None:
             image_path = f'page_{i}.jpg'
             image.save(image_path, 'JPEG')
             image_paths.append(image_path)
-            st.success('PDF converted to images successfully!')
         
-        st.image(image_path, caption=f'Page {image_paths.index(image_path) + 1}')
-        for image_path in image_paths:
-            with open(image_path, "rb") as img_file:
-                img_data = base64.b64encode(img_file.read()).decode()
+        
         
 
-        st.session_state.JSON_CV = extract_text_from_images(image_paths)
+        concatenated_image = ""
+        for image_path in image_paths:
+            with open(image_path, "rb") as img_file:
+                st.image(image_path, caption=f'Page {image_paths.index(image_path) + 1}')
+                img_data = base64.b64encode(img_file.read()).decode()
+                concatenated_image += img_data
+
+         # Now you can use the concatenated_image variable as needed
+        # Delete the temporary image files
+        for image_path in image_paths:
+            os.remove(image_path)
+
+        # Delete the temporary PDF file
+        os.remove(temp_file_path)
+    st.success('PDF converted to images successfully!')
+    with st.spinner('Analyzing the CV...'):
+        st.session_state.JSON_CV = extract_text_from_images(concatenated_image)
         CV_ambedded = get_embedding(st.session_state.JSON_CV)
         
         #get_first_advice()
