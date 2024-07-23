@@ -69,7 +69,7 @@ if "messages" not in st.session_state.keys():
     st.session_state.messages = [
         {
             "role": "assistant",
-            "content": "Start your consultation about your CV. ask any question you want about your CV.",
+            "content": "Start your consultation about your CV. Upload your CV in PDF format and ask a question about it.",
         }
     ]
 
