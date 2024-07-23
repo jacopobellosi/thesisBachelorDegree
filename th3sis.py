@@ -15,6 +15,7 @@ from os.path import exists
 import ast
 import pdb
 import sys
+import fitz  # PyMuPDF
 #from sentence_transformers import SentenceTransformer
 #from sklearn.metrics.pairwise import cosine_similarity
 
@@ -276,13 +277,21 @@ if uploaded_file is not None:
             f.write(uploaded_file.getbuffer())
             
         # Convert PDF to images
-        images = convert_from_path(temp_file_path,poppler_path='./poppler-24.02.0/Library/bin')
-        image_paths = []
-        for i, image in enumerate(images):
-            image_path = f'page_{i}.jpg'
-            image.save(image_path, 'JPEG')
-            image_paths.append(image_path)
+        #images = convert_from_path(temp_file_path,poppler_path='./poppler-24.02.0/Library/bin')
+        #image_paths = []
+        #for i, image in enumerate(images):
+        #    image_path = f'page_{i}.jpg'
+        #    image.save(image_path, 'JPEG')
+        #    image_paths.append(image_path)
         
+        file_path = temp_file_path
+        doc = fitz.open(file_path)  # open document
+        image_paths = []
+        for i, page in enumerate(doc):
+            pix = page.get_pixmap()  # render page to an image
+            image_path = f'page_{i}.jpg'
+            pix.save(f"page_{i}.jpg")
+            image_paths.append(image_path)
         
         
 

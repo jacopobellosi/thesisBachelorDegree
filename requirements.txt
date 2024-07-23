@@ -7,3 +7,4 @@ pdf2image
 pip
 pyparsing
 pypdf
+PyMuPDF
