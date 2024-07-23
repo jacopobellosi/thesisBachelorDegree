@@ -1,0 +1,9 @@
+streamlit
+numpy
+openai
+openpyxl
+pandas
+pdf2image
+pip
+pyparsing
+pypdf
