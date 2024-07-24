@@ -210,7 +210,7 @@ def get_first_advice(JSON_CV):
 
 
 
-@st.cache_resource(show_spinner=False)
+@st.cache
 def load_data(JSON_CV):
     print("Carico i dati")
     with st.expander('See process'):
