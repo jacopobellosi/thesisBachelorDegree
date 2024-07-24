@@ -8,3 +8,10 @@ pip
 pyparsing
 pypdf
 PyMuPDF
+ldap3
+llama-index-indices-managed-llama-cloud
+llama-index-legacy
+llama-index-question-gen-openai
+llama-index-readers-file
+llama-index-readers-llama-parse
+
