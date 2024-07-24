@@ -113,7 +113,7 @@ def extract_text_from_images(concatenated_image):
     print("elaboro il CV")
 
     payload = {
-        "model": "gpt-4o",
+        "model": "gpt-4o-mini",
         "temperature":0,
         "messages": [
         {
@@ -170,7 +170,8 @@ def get_first_advice(JSON_CV):
     response_stream = st.session_state.chat_engine.stream_chat(f"""How can i improve it?, 
                                                                suggest me some technical advice. Give also at the end some career adive ONLY based on the dataset i am giving you.
                                                                This is my CV:{JSON_CV}.
-                                                               Just to remeber this is the dataset i am giving you: {index}""")
+                                                               Use this information from my datasets to answare the user question and to give more information: {index}.
+                                                               Stick to these contexts to answering the question, do not hallucinate features""")
     st.write_stream(response_stream.response_gen)
     message = {"role": "assistant", "content": response_stream.response}
     st.session_state.messages.append(message)
@@ -299,7 +300,9 @@ if st.session_state.messages[-1]["role"] != "assistant" and len(st.session_state
     with st.spinner("Thinking..."):
         response_stream = st.session_state.chat_engine.stream_chat(f"""{prompt}, stick to this question, giving me only respose of text and be precise.
                                                                    Just to remember, this is my CV: {st.session_state.JSON_CV}, stick to this context to answering the question, do not hallucinate features.
-                                                                   This is also the history of the conversation: {st.session_state.messages}
+                                                                   This is also the history of the conversation: {st.session_state.messages}.
+                                                                   Use this information from my datasets to answare the user question and to give more information: {index}.
+                                                                    Stick to these contexts to answering the question, do not hallucinate features
                                                                     """)
         st.write_stream(response_stream.response_gen)
         message = {"role": "assistant", "content": response_stream.response}
