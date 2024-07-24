@@ -14,4 +14,6 @@ llama-index-legacy
 llama-index-question-gen-openai
 llama-index-readers-file
 llama-index-readers-llama-parse
+llama-index
+llama-index-llms-openai
 
