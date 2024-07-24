@@ -230,6 +230,10 @@ st.text('Ready...')
 
 
 
+
+if prompt := st.chat_input("Ask a question about your CV"):  # Prompt for user input and save to chat history
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
 uploaded_file = st.file_uploader("Upload your CV (PDF only)", type="pdf")
 if uploaded_file is not None:
     with st.spinner('Converting PDF to images...'):
@@ -288,13 +292,13 @@ if uploaded_file is not None:
 
 
 
-
-if prompt := st.chat_input("Ask a question about your CV"):  # Prompt for user input and save to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
-
 for message in st.session_state.messages:  # Write message history to UI
     with st.chat_message(message["role"]):
         st.write(message["content"])
+
+
+
+
 
 if st.session_state.messages[-1]["role"] != "assistant" and len(st.session_state.messages)>1:
     with st.spinner("Thinking..."):
