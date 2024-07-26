@@ -75,7 +75,7 @@ if "messages" not in st.session_state.keys():
     st.session_state.messages = [
         {
             "role": "assistant",
-            "content": "Start your consultation about your CV. Upload your CV in PDF format and ask a question about it.",
+            "content": "Start your consultation about your CV.",
         }
     ]
 
@@ -85,14 +85,29 @@ index_files = ['vector_store.json', 'docstore.json', 'index_store.json']
 index_exists = all(os.path.exists(os.path.join(persist_directory, file)) for file in index_files)
 Settings.llm = OpenAI(
             model="gpt-4o-mini",
-            temperature=0.2,
-            system_prompt="""You're an expert recruiter, you have receive my CV as a JSON and you will have to 
-                                 give me some technical advice on how to improve it. Don't show the JSON file, only show text!
-                
-                Keep your answers technical, academic 
-                languages and based on 
-                facts.  do not hallucinate features.
-                Give also the references from where you are taking the information, use maninly the dataset i am giving you.
+            temperature=0.3,
+            system_prompt="""You're an expert recruiter. You have received my CV as a JSON, and you need to provide technical advice on how to improve it. 
+                     Don't show the JSON file; only show the text!
+
+                     Instructions:
+                     - Provide technical and academic advice based on facts.
+                     - Do not make up features or information.
+                     - Use the provided dataset for references.
+                     - Focus on areas such as skills, job experience, education,certification,ecc.
+                     - Offer career advice based on current industry trends.
+                     - Provide a detailed response with actionable advice.
+                     - Use a professional tone and be concise.
+                     - Do no alucinate.
+
+                     Example of response format:
+                     - Skills: Improve your proficiency in Python by taking advanced courses.
+                     - Experience: Highlight your project management experience more prominently.
+                     - Education: Consider obtaining a certification in data science.
+
+                     Note: If the CV is missing crucial information, suggest adding it.
+
+                     Dataset reference: The dataset has important information about the carrer path, skills, and job experience of the user. Use this information to provide advice.
+                        It contains information about the carrer, as if the job domand is rising or not, use this information to prvode advice and data for the user.
             """,
 )
 
@@ -167,19 +182,33 @@ def get_first_advice(JSON_CV):
     #print(response)
     #response = response['choices'][0]['message']['content']
     #st.write(response)
-    response_stream = st.session_state.chat_engine.stream_chat(f"""How can i improve it?, 
-                                                               suggest me some technical advice. Give also at the end some career adive ONLY based on the dataset i am giving you.
-                                                               This is my CV:{JSON_CV}.
-                                                               Use this information from my datasets to answare the user question and to give more information: {index}.
-                                                               Stick to these contexts to answering the question, do not hallucinate features""")
+    response_stream = st.session_state.chat_engine.stream_chat(f"""
+        Based on the provided CV, suggestsome technical improvements on how to get a better CV in the following areas:
+            - Summary
+            - Skills
+            - Job Experience
+            - Education
+            - Certifications
+            - Career Advice
+            - Language
+            - Other relevant areas
+            Provide specific, actionable advice. For example:
+            - "Enhance your proficiency in data analysis by learning advanced Excel functions."
+            - "Consider adding more details about your project management responsibilities in your last job."
+            - "Obtaining a certification in cloud computing could make you more competitive in the IT job market."
+
+            CV: {JSON_CV}
+            Use the following dataset for references and ensure your advice is based on current industry trends: {index}.
+            Stick to these contexts and do not hallucinate features.""")
     st.write_stream(response_stream.response_gen)
     message = {"role": "assistant", "content": response_stream.response}
     st.session_state.messages.append(message)
     st.divider()
-    st.text("Example of prompts:")
+    st.text("Example of questions to ask:")
     st.text("How can I improve my CV?")
     st.text("What skills should I improve?")
     st.text("Is my job sector rising?")
+    st.text("How can i write a better summary?")
     #remove_files("./CV/"+ uploaded_file.name)
     #for image_path in image_paths:
     #    remove_files(image_path)
@@ -212,7 +241,7 @@ index = load_data()
 #chat_engine = index.as_chat_engine(chat_mode="condense_question", verbose=True)
 if "chat_engine" not in st.session_state.keys():  # Initialize the chat engine
     st.session_state.chat_engine = index.as_chat_engine(
-        chat_mode="condense_question", verbose=True, streaming=True
+        chat_mode="context", verbose=True, streaming=True,system_prompt=Settings.llm.system_prompt
     )
 
 #st.text("Index is ready")
@@ -233,6 +262,8 @@ st.text('Ready...')
 
 if prompt := st.chat_input("Ask a question about your CV"):  # Prompt for user input and save to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
+
+
 
 uploaded_file = st.file_uploader("Upload your CV (PDF only)", type="pdf")
 if uploaded_file is not None:
@@ -292,6 +323,7 @@ if uploaded_file is not None:
 
 
 
+
 for message in st.session_state.messages:  # Write message history to UI
     with st.chat_message(message["role"]):
         st.write(message["content"])
@@ -299,14 +331,25 @@ for message in st.session_state.messages:  # Write message history to UI
 
 
 
-
 if st.session_state.messages[-1]["role"] != "assistant" and len(st.session_state.messages)>1:
     with st.spinner("Thinking..."):
-        response_stream = st.session_state.chat_engine.stream_chat(f"""{prompt}, stick to this question, giving me only respose of text and be precise.
-                                                                   Just to remember, this is my CV: {st.session_state.JSON_CV}, stick to this context to answering the question, do not hallucinate features.
-                                                                   This is also the history of the conversation: {st.session_state.messages}.
-                                                                   Use this information from my datasets to answare the user question and to give more information: {index}.
-                                                                    Stick to these contexts to answering the question, do not hallucinate features
+        response_stream = st.session_state.chat_engine.stream_chat(f"""You are an expert recruiter with a deep understanding of CV review and improvement.
+        A user has asked the following question about their CV: "{prompt}".
+
+        Here is the CV content in JSON format: {st.session_state.JSON_CV}.
+
+        Provide a detailed, accurate, and specific response to the user's question.
+        Your response should be based on the provided CV and use the information from the dataset referenced below.
+        Make sure to:
+        - Stick to the context of the user's question.
+        - Provide technical and factual advice.
+        - Do not make up features or information.
+        - Use examples and actionable suggestions where possible.
+        - Refer to the dataset for supporting information.
+
+        Conversation history for context: {st.session_state.messages}.
+
+        Dataset reference: {index}.
                                                                     """)
         st.write_stream(response_stream.response_gen)
         message = {"role": "assistant", "content": response_stream.response}
