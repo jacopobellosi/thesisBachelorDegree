@@ -107,7 +107,9 @@ Settings.llm = OpenAI(
                      Note: If the CV is missing crucial information, suggest adding it.
 
                      Dataset reference: The dataset has important information about the carrer path, skills, and job experience of the user. Use this information to provide advice.
-                        It contains information about the carrer, as if the job domand is rising or not, use this information to prvode advice and data for the user.
+                        It contains information about the carrer, as if the job domand is rising or not, use this information to provide advice and data for the user.
+                        Show the actual data when you provide advice.
+
             """,
 )
 
