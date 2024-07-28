@@ -66,18 +66,19 @@ if not check_password():
     st.stop()
 
 st.subheader("Welcome to the AI Virtual Assistant for CV consultant")
-st.text("The assistant is based on LLama and ChatGpt-4o models")
-st.text("!Important: you have to upload your CV in order the let the AI work properly")
+st.text("The assistant is based on LLamaIndex and ChatGpt-4o models")
+st.text("⚠️Important: you have to upload your CV in order the let the AI\n work properly (better if in English)⚠️")
 st.divider()
 openai.api_key = st.secrets.openai_key
 client = OpenAI(api_key=st.secrets.openai_key,project="proj_TSOrJg10Snkt4UuWMSPHpgpQ")
+
 if "messages" not in st.session_state.keys():
     st.session_state.messages = [
         {
             "role": "assistant",
             "content": "Start your consultation about your CV.",
         }
-    ]
+   ]
 
 #st.text('Preparing the model...')
 persist_directory = './index'
@@ -85,7 +86,7 @@ index_files = ['vector_store.json', 'docstore.json', 'index_store.json']
 index_exists = all(os.path.exists(os.path.join(persist_directory, file)) for file in index_files)
 Settings.llm = OpenAI(
             model="gpt-4o-mini",
-            temperature=0.3,
+            temperature=0.4,
             system_prompt="""You're an expert recruiter. You have received my CV as a JSON, and you need to provide technical advice on how to improve it. 
                      Don't show the JSON file; only show the text!
 
@@ -113,8 +114,15 @@ Settings.llm = OpenAI(
             """,
 )
 
+def print_text():
+    for message in st.session_state.messages:  # Write message history to UI
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
 
-@st.cache_data
+
+
+
+
 def extract_text_from_images(concatenated_image):
 
     prompt = f"""
@@ -156,10 +164,10 @@ def extract_text_from_images(concatenated_image):
             
     response = response['choices'][0]['message']['content']
     #st.write(response)
-    #print(response)
+    print(response)
             
     response = {"role": "assistant", "content": response}
-    st.text('Loading your data...')
+    #st.text('Loading your data...')
     #index.insert_nodes(response["content"])
     #st.text('Preparing the engine...')
     print("MOSTRO LA STORIA \n",st.session_state.messages, " \n lenght:", len(st.session_state.messages),"FINE STORIA \n")
@@ -177,14 +185,14 @@ def extract_text_from_images(concatenated_image):
     return response["content"]
 
 
-@st.cache_data
 def get_first_advice(JSON_CV):
     #st.write(JSON_CV)
     print("ti do ora un primo consiglio")
     #print(response)
     #response = response['choices'][0]['message']['content']
     #st.write(response)
-    response_stream = st.session_state.chat_engine.stream_chat(f"""
+
+    response_stream = st.session_state.chat_engine.chat(f"""
         Based on the provided CV, suggestsome technical improvements on how to get a better CV in the following areas:
             - Summary
             - Skills
@@ -197,14 +205,17 @@ def get_first_advice(JSON_CV):
             Provide specific, actionable advice. For example:
             - "Enhance your proficiency in data analysis by learning advanced Excel functions."
             - "Consider adding more details about your project management responsibilities in your last job."
-            - "Obtaining a certification in cloud computing could make you more competitive in the IT job market."
+            - "Is betteer to follow Cloud Computing sector as it's rising rapidly."
 
             CV: {JSON_CV}
             Use the following dataset for references and ensure your advice is based on current industry trends: {index}.
             Stick to these contexts and do not hallucinate features.""")
-    st.write_stream(response_stream.response_gen)
+    print("messaggi in stream",response_stream.response_gen)
+    #st.write_stream(response_stream.response_gen)
+    print("messaggio di prima risposta da stamapre", response_stream.response)
     message = {"role": "assistant", "content": response_stream.response}
     st.session_state.messages.append(message)
+    print_text()
     st.divider()
     st.text("Example of questions to ask:")
     st.text("How can I improve my CV?")
@@ -256,16 +267,7 @@ if "chat_engine" not in st.session_state.keys():  # Initialize the chat engine
 #        chat_mode="condense_question", verbose=True, streaming=True
 #    )
 
-st.text('Ready...')
-
-
-
-
-
-if prompt := st.chat_input("Ask a question about your CV"):  # Prompt for user input and save to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
-
-
+#st.text('Ready...')
 
 uploaded_file = st.file_uploader("Upload your CV (PDF only)", type="pdf")
 if uploaded_file is not None:
@@ -325,39 +327,54 @@ if uploaded_file is not None:
 
 
 
+if prompt := st.chat_input("Ask a question about your CV"):  # Prompt for user input and save to chat history
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    #print_text()
 
-for message in st.session_state.messages:  # Write message history to UI
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
+
+
+
+
+
+
+#for message in st.session_state.messages:  # Write message history to UI
+#    with st.chat_message(message["role"]):
+#        st.write(message["content"])
 
 
 
 
 if st.session_state.messages[-1]["role"] != "assistant" and len(st.session_state.messages)>1:
     with st.spinner("Thinking..."):
-        response_stream = st.session_state.chat_engine.stream_chat(f"""You are an expert recruiter with a deep understanding of CV review and improvement.
-        A user has asked the following question about their CV: "{prompt}".
+        response_stream = st.session_state.chat_engine.chat(f"""You are an expert recruiter with a deep understanding of CV review and improvement.
+            A user has asked the following question about their CV: "{prompt}".
 
-        Here is the CV content in JSON format: {st.session_state.JSON_CV}.
+            Here is the CV content in JSON format: {st.session_state.JSON_CV}.
 
-        Provide a detailed, accurate, and specific response to the user's question.
-        Your response should be based on the provided CV and use the information from the dataset referenced below.
-        Make sure to:
-        - Stick to the context of the user's question.
-        - Provide technical and factual advice.
-        - Do not make up features or information.
-        - Use examples and actionable suggestions where possible.
-        - Refer to the dataset for supporting information.
+            Provide a detailed, accurate, and specific response to the user's question.
+            Your response should be based on the provided CV and use the information from the dataset referenced below.
+            Make sure to:
+            - Stick to the context of the user's question.
+            - Provide technical and factual advice.
+            - Do not make up features or information.
+            - Use examples and actionable suggestions where possible.
+            - Refer to the dataset for supporting information.
 
-        Conversation history for context: {st.session_state.messages}.
+            Conversation history for context: {st.session_state.messages}.
 
-        Dataset reference: {index}.
-                                                                    """)
-        st.write_stream(response_stream.response_gen)
+            Dataset reference: {index}.
+                                                                        """)
+            #st.write_stream(response_stream.response_gen)
         message = {"role": "assistant", "content": response_stream.response}
         st.session_state.messages.append(message)
-
-        
+        print_text()
+        st.divider()
+        st.text("Example of questions to ask:")
+        st.text("How can I improve my CV?")
+        st.text("What skills should I improve?")
+        st.text("Is my job sector rising?")
+        st.text("How can i write a better summary?")
+            
     #print(conversation_history)
 
 
